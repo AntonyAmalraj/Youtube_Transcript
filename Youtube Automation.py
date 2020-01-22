@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
-# Import the required packages
+# In[66]:
+
+
+#Step 1 :
 
 #!pip install apiclient
 #!pip install freeze
@@ -34,17 +36,21 @@ import langdetect
 import re
 
 
-# In[2]:
-# Use the API key generated in the below step
+# In[67]:
 
-DEVELOPER_KEY = <Insert your API Key>
+
+#Step 2 :
+
+DEVELOPER_KEY = "AIzaSyBiTLl0Pis4g7RJCAEwjPobBaqrWW9rHdI"
 YOUTUBE_API_SERVICE_NAME = "youtube"
 YOUTUBE_API_VERSION = "v3"
 from youtube_transcript_api import YouTubeTranscriptApi
 
 
-# In[3]:
-# This is a standard function to retireve the videos from you-tube
+# In[68]:
+
+
+#Step 3 :
 
 def youtube_search(q, max_results=49,order="relevance", token=None, location=None, location_radius=None):
     youtube = build(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION,developerKey=DEVELOPER_KEY)
@@ -112,42 +118,84 @@ def youtube_search(q, max_results=49,order="relevance", token=None, location=Non
 
     return youtube_dict
 
-# In[14]:
+
+# In[108]:
+
+
+#Step 4:
 
 import os
 os.chdir("C:/Users/antony.morais/Desktop/Amalraj/Youtube Automation Blog")
-
-# In[15]:
-
-# The required keyword (for which the search results have to be fetched) needs to be given below in youtube_search function
-df=pd.DataFrame(youtube_search("Redmi Note 8 pro", max_results=49))
-
-# In[16]:
-
+df=pd.DataFrame(youtube_search("Samsung Galaxy M30 S", max_results=49))
 df1 = df[['title','videoId','viewCount','channelTitle','channelSubCount','commentCount','likeCount','dislikeCount','tags','favoriteCount','channelId','categoryId']]
 df1.columns = ['Title','VideoId','ViewCount','ChannelTitle','ChannelSubCount','CommentCount','likeCount','dislikeCount','tags','favoriteCount','channelId','categoryId']
-df1.shape
 
-# In[21]:
+
+# In[109]:
+
+
+# df1.loc[:,'title_translated']=df1['Title']
+# df1.loc[:,'title_translated']=df1.apply(lambda row: mtranslate.translate(row.Title,"en","auto"), axis=1)
+
+
+# In[110]:
+
+
+# df1.shape
+
+
+# In[111]:
+
+
+# import urllib.request, json 
+# with urllib.request.urlopen("https://www.googleapis.com/youtube/v3/channels?part=statistics&id=UCOhHO2ICt0ti9KAh-QHvttQ&key=AIzaSyBiTLl0Pis4g7RJCAEwjPobBaqrWW9rHdI") as url:
+#     data = json.loads(url.read().decode())
+#     print(data)
+
+
+# In[112]:
+
+
+# from pandas.io.json import json_normalize
+# json_normalize(data['kind'])
+
+
+# In[113]:
+
+
+#Step 5:
 
 #Remove Tutorial Videos
-df1=df1[[not i for i in df1.Title.str.contains("how to","tutorial")]]
-
+df1=df1[[not i for i in df1.Title.str.contains("how to|tutorial|getting started")]]
 #Retain only one video per channel (channelID column) based on highest value of Views, Likes and Comments.
 #This is to overcome redundant information.
 df1.sort_values(['ViewCount','likeCount','CommentCount'], ascending=[False,False,False],inplace=True)
 df1.reset_index(drop=True,inplace=True)
-df1_dup=pd.DataFrame(df1.duplicated(subset='channelId', keep='first'))
-df1_dup.columns=["Dup"]
-df_red=df1[df1_dup['Dup']==False]
-df_red.reset_index(drop=True,inplace=True)
+# df1_dup=pd.DataFrame(df1.duplicated(subset='channelId', keep='first'))
+# df1_dup.columns=["Dup"]
+# df_red=df1[df1_dup['Dup']==False]
+# df_red.reset_index(drop=True,inplace=True)
+# df_red.shape
+df_red=df1
+
+
+# In[114]:
+
+
 df_red.shape
 
-# In[23]:
+
+# In[115]:
+
+
+#Step 6:
 
 df_red.loc[:,"emv_video"] = df_red.apply(lambda row: int(row.ViewCount)*0.14+int(row.CommentCount)*8.20+int(row.likeCount)*0.72, axis=1)
+#df1.loc[:,"emv_subscriber"] = df1.apply(lambda row:int(row.ChannelSubCount)*16.54 , axis=1)
 
-# In[24]:
+
+# In[116]:
+
 
 videoid = list(df_red['VideoId'])
 x = YouTubeTranscriptApi.get_transcripts(videoid, continue_after_error=True)
@@ -155,7 +203,9 @@ vids_with_sub = x[0]
 vids_without_sub = x[1]
 df_trans = pd.DataFrame(list(vids_with_sub.keys()), columns=['VideoId'])
 
-# In[25]:
+
+# In[117]:
+
 
 result2= []
 for i in range(0,len(vids_with_sub)):
@@ -183,17 +233,10 @@ for i in range(0,len(vids_with_sub)):
     result2.append(' '.join(result1))
 
 
-# In[26]:
+# In[118]:
 
-# Store the results in a seperate column in the dataframe
+
 df_trans['Transcripts'] = result2
-
-# In[27]:
-
 fin_df = pd.merge(df_red, df_trans, how='left', left_on='VideoId', right_on='VideoId')
-
-# Drop unnecessary columns (Those which are not needed for the EMV Calculation
 fin_df=fin_df.drop(['categoryId','channelId','ChannelTitle','VideoId','Title','VideoId','tags','favoriteCount'], axis = 1) 
-
-# Store the results back in a CSV
-fin_df.reset_index(drop=True).to_csv("redmi_note_8_pro_final.csv", sep=',', encoding='utf-8',index=False)
+fin_df.reset_index(drop=True).to_csv("Samsung_Galaxy_M30S.csv", sep=',', encoding='utf-8',index=False)
