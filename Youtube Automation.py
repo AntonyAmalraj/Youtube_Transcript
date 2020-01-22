@@ -33,7 +33,7 @@ import pprint
 import matplotlib.pyplot as matplot
 import mtranslate
 import langdetect
-import re
+from youtube_transcript_api import YouTubeTranscriptApi
 
 
 # In[67]:
@@ -41,10 +41,10 @@ import re
 
 #Step 2 :
 
-DEVELOPER_KEY = "AIzaSyBiTLl0Pis4g7RJCAEwjPobBaqrWW9rHdI"
+DEVELOPER_KEY = "<Insert your API Key>"
 YOUTUBE_API_SERVICE_NAME = "youtube"
 YOUTUBE_API_VERSION = "v3"
-from youtube_transcript_api import YouTubeTranscriptApi
+
 
 
 # In[68]:
@@ -130,39 +130,6 @@ df=pd.DataFrame(youtube_search("Samsung Galaxy M30 S", max_results=49))
 df1 = df[['title','videoId','viewCount','channelTitle','channelSubCount','commentCount','likeCount','dislikeCount','tags','favoriteCount','channelId','categoryId']]
 df1.columns = ['Title','VideoId','ViewCount','ChannelTitle','ChannelSubCount','CommentCount','likeCount','dislikeCount','tags','favoriteCount','channelId','categoryId']
 
-
-# In[109]:
-
-
-# df1.loc[:,'title_translated']=df1['Title']
-# df1.loc[:,'title_translated']=df1.apply(lambda row: mtranslate.translate(row.Title,"en","auto"), axis=1)
-
-
-# In[110]:
-
-
-# df1.shape
-
-
-# In[111]:
-
-
-# import urllib.request, json 
-# with urllib.request.urlopen("https://www.googleapis.com/youtube/v3/channels?part=statistics&id=UCOhHO2ICt0ti9KAh-QHvttQ&key=AIzaSyBiTLl0Pis4g7RJCAEwjPobBaqrWW9rHdI") as url:
-#     data = json.loads(url.read().decode())
-#     print(data)
-
-
-# In[112]:
-
-
-# from pandas.io.json import json_normalize
-# json_normalize(data['kind'])
-
-
-# In[113]:
-
-
 #Step 5:
 
 #Remove Tutorial Videos
@@ -171,30 +138,14 @@ df1=df1[[not i for i in df1.Title.str.contains("how to|tutorial|getting started"
 #This is to overcome redundant information.
 df1.sort_values(['ViewCount','likeCount','CommentCount'], ascending=[False,False,False],inplace=True)
 df1.reset_index(drop=True,inplace=True)
-# df1_dup=pd.DataFrame(df1.duplicated(subset='channelId', keep='first'))
-# df1_dup.columns=["Dup"]
-# df_red=df1[df1_dup['Dup']==False]
-# df_red.reset_index(drop=True,inplace=True)
-# df_red.shape
 df_red=df1
 
 
-# In[114]:
-
-
-df_red.shape
-
-
-# In[115]:
 
 
 #Step 6:
 
 df_red.loc[:,"emv_video"] = df_red.apply(lambda row: int(row.ViewCount)*0.14+int(row.CommentCount)*8.20+int(row.likeCount)*0.72, axis=1)
-#df1.loc[:,"emv_subscriber"] = df1.apply(lambda row:int(row.ChannelSubCount)*16.54 , axis=1)
-
-
-# In[116]:
 
 
 videoid = list(df_red['VideoId'])
